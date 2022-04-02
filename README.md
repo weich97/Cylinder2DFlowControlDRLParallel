@@ -56,4 +56,3 @@ If you encounter problems, please:
 For more details about the CFD simulation and how to build your own user-defined cases, please consult the Readme of the JFM code, availalbe at https://github.com/jerabaul29/Cylinder2DFlowControlDRL.
 
 
-## Use this code to test a new flow control problem.
