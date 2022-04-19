@@ -68,7 +68,7 @@ class JetBCValue(UserExpression):
 
 if __name__ == '__main__':
     from xii import EmbeddedMesh
-    from generate_msh import generate_mesh
+    from generate_msh import generate_mesh_slit
     from msh_convert import convert
     import os
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     h5_file = '.'.join([root, 'h5'])
     # Regenerate mesh?
     if True: 
-        generate_mesh(geometry_params, template='./geometry_2d.template_geo')
+        generate_mesh_slit(geometry_params, template='mesh/geometry_2d.geo')
         msh_file = '.'.join([root, 'msh'])
         assert os.path.exists(msh_file)
 
