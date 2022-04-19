@@ -21,7 +21,7 @@ nb_actuations = 80 #Nombre d'actuations du reseau de neurones par episode
 def resume_env(plot=False,
                step=50,
                dump=100,
-               remesh=False,
+               remesh=True,
                random_start=False,
                single_run=False):
     # ---------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ def resume_env(plot=False,
     simulation_duration = 2.0 #duree en secondes de la simulation
     dt=0.0005
 
-    root = 'mesh/turek_2d'
+    root = 'mesh/geometry_2d'
     if(not os.path.exists('mesh')):
         os.mkdir('mesh')
 
@@ -40,22 +40,25 @@ def resume_env(plot=False,
                     'length': 2.2,
                     'front_distance': 0.05 + 0.15,
                     'bottom_distance': 0.05 + 0.15,
-                    'jet_radius': 0.05,
                     'width': 0.41,
                     'cylinder_size': 0.01,
                     'coarse_size': 0.1,
                     'coarse_distance': 0.5,
                     'box_size': 0.05,
+                    'case_id': 2, # 1 stands for jet flow, 2 stands for slit
+                    'jet_radius': 0.05,
                     'jet_positions': [90+jet_angle, 270-jet_angle],
                     'jet_width': 10,
+                    'slit_angle': 10.0,
+                    'slit_width': 0.1,
                     'clscale': 0.25,
-                    'template': '../geometry_2d.template_geo',
+                    'template': './mesh/geometry_2d.geo',
                     'remesh': remesh}
 
     def profile(mesh, degree):
         bot = mesh.coordinates().min(axis=0)[1]
         top = mesh.coordinates().max(axis=0)[1]
-        print(bot, top)
+        #print(bot, top)
         H = top - bot
 
         Um = 1.5
@@ -85,6 +88,7 @@ def resume_env(plot=False,
         for crrt_y in positions_probes_for_grid_y:
             list_position_probes.append(np.array([crrt_x, crrt_y]))
 
+    # Set a lot of points around the cylinder
     list_radius_around = [geometry_params['jet_radius'] + 0.02, geometry_params['jet_radius'] + 0.05]
     list_angles_around = np.arange(0, 360, 10)
 
@@ -100,6 +104,8 @@ def resume_env(plot=False,
     optimization_params = {"num_steps_in_pressure_history": 1,
                         "min_value_jet_MFR": -1e-2,
                         "max_value_jet_MFR": 1e-2,
+                        "min_slit_width": 0.02,
+                        "max_slit_width": 0.2,
                         "smooth_control": (nb_actuations/dt)*(0.1*0.0005/80),
                         "zero_net_Qs": True,
                         "random_start": random_start}
@@ -114,7 +120,7 @@ def resume_env(plot=False,
                         "line_lift": 0,
                         "show_all_at_reset": False,
                         "single_run":single_run
-                        }
+                        }  
 
     reward_function = 'drag_plain_lift'
 
@@ -142,15 +148,21 @@ def resume_env(plot=False,
 
     simu_name = 'Simu'
 
-    if (geometry_params["jet_positions"][0] - 90) != 0:
-        next_param = 'A' + str(geometry_params["jet_positions"][0] - 90)
+    #if (geometry_params["jet_positions"][0] - 90) != 0:
+    #    next_param = 'A' + str(geometry_params["jet_positions"][0] - 90)
+    #    simu_name = '_'.join([simu_name, next_param])
+    if (geometry_params["slit_angle"] - 0.0) != 0:
+        next_param = 'A' + str(geometry_params["slit_angle"] - 0.0)
+        simu_name = '_'.join([simu_name, next_param])
+    if (geometry_params["slit_width"] - 0.1) != 0:
+        next_param = 'A' + str(geometry_params["slit_width"] - 0.1)
         simu_name = '_'.join([simu_name, next_param])
     if geometry_params["cylinder_size"] != 0.01:
         next_param = 'M' + str(geometry_params["cylinder_size"])[2:]
         simu_name = '_'.join([simu_name, next_param])
-    if optimization_params["max_value_jet_MFR"] != 0.01:
-        next_param = 'maxF' + str(optimization_params["max_value_jet_MFR"])[2:]
-        simu_name = '_'.join([simu_name, next_param])
+    #if optimization_params["max_value_jet_MFR"] != 0.01:
+    #    next_param = 'maxF' + str(optimization_params["max_value_jet_MFR"])[2:]
+    #    simu_name = '_'.join([simu_name, next_param])
     if nb_actuations != 80:
         next_param = 'NbAct' + str(nb_actuations)
         simu_name = '_'.join([simu_name, next_param])

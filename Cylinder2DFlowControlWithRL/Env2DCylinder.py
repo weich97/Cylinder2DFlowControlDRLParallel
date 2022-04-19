@@ -17,7 +17,7 @@ sys.path.append(cwd + "/../Simulation/")
 
 from dolfin import Expression, File, plot
 from probes import PenetratedDragProbeANN, PenetratedLiftProbeANN, PressureProbeANN, VelocityProbeANN, RecirculationAreaProbe
-from generate_msh import generate_mesh
+from generate_msh import generate_mesh_slit
 from flow_solver import FlowSolver
 from msh_convert import convert
 from dolfin import *
@@ -72,6 +72,24 @@ class RingBuffer():
         x_index = (self.index + np.arange(x.size)) % self.data.size
         self.data[x_index] = x
         self.index = x_index[-1] + 1
+
+    def get(self):
+        "Returns the first-in-first-out data in the ring buffer"
+        idx = (self.index + np.arange(self.data.size)) % self.data.size
+        return self.data[idx]
+
+
+class RingBuffer_scalar():
+    "A 1D ring buffer using numpy arrays"
+    def __init__(self, length):
+        self.data = np.zeros(length, dtype='f')
+        self.index = 0
+
+    def extend(self, x):
+        "adds array x to ring buffer"
+        x_index = (self.index + 1) % self.data.size
+        self.data[x_index] = x
+        self.index = x_index + 1
 
     def get(self):
         "Returns the first-in-first-out data in the ring buffer"
@@ -151,10 +169,13 @@ class Env2DCylinder(Environment):
 
         self.history_parameters = {}
 
-        for crrt_jet in range(len(self.geometry_params["jet_positions"])):
-            self.history_parameters["jet_{}".format(crrt_jet)] = RingBuffer(self.size_history)
+        #for crrt_jet in range(len(self.geometry_params["jet_positions"])):
+        #    self.history_parameters["jet_{}".format(crrt_jet)] = RingBuffer(self.size_history)
+        self.history_parameters["slit_width"] = RingBuffer_scalar(self.size_history)
+        self.history_parameters["slit_angle"] = RingBuffer_scalar(self.size_history)
 
-        self.history_parameters["number_of_jets"] = len(self.geometry_params["jet_positions"])
+        #self.history_parameters["number_of_jets"] = len(self.geometry_params["jet_positions"])
+        self.history_parameters["number_of_paras"] = 2 # slit width and angle
 
         for crrt_probe in range(len(self.output_params["locations"])):
             if self.output_params["probe_type"] == 'pressure':
@@ -182,15 +203,16 @@ class Env2DCylinder(Environment):
                 print("Remesh")
                 #printi("generate_mesh start...")
 
-            generate_mesh(self.geometry_params, template=self.geometry_params['template'])
+            generate_mesh_slit(self.geometry_params, template=self.geometry_params['template'])
 
             if self.verbose > 0:
                 print("generate_mesh done!")
-            print(msh_file)
+            print('msh', msh_file)
             assert os.path.exists(msh_file)
 
             convert(msh_file, h5_file)
             assert os.path.exists(h5_file)
+            print('self.n_iter_make_ready ', self.n_iter_make_ready)
 
         # ------------------------------------------------------------------------
         # if necessary, load initialization fields
@@ -215,8 +237,8 @@ class Env2DCylinder(Environment):
                 #printi("Warning!! The number of jets was not set in the loaded hdf5 file")
 
             if not "lift" in self.history_parameters:
-                self.history_parameters["lift"] = RingBuffer(self.size_history)
-                #printi("Warning!! No value for the lift founded")
+                self.history_parameters["lift"]# = RingBuffer(self.size_history)
+                #printi("Warning!! No value for# the lift founded")
 
             if not "recirc_area" in self.history_parameters:
                 self.history_parameters["recirc_area"] = RingBuffer(self.size_history)
@@ -239,7 +261,7 @@ class Env2DCylinder(Environment):
 
         # ------------------------------------------------------------------------
         # create the flow simulation object
-        self.flow = FlowSolver(self.flow_params, self.geometry_params, self.solver_params)
+        self.flow = FlowSolver(self.flow_params, self.path_root, self.geometry_params, self.solver_params)
 
         # ------------------------------------------------------------------------
         # Setup probes
@@ -259,7 +281,10 @@ class Env2DCylinder(Environment):
         # No flux from jets for starting
         self.Qs = np.zeros(len(self.geometry_params['jet_positions']))
         self.action = np.zeros(len(self.geometry_params['jet_positions']))
-
+        # slit width and angle use default values 
+        self.slit_width = 0.1
+        self.slit_angle = 0.0
+  
         # ------------------------------------------------------------------------
         # prepare the arrays for plotting positions
         self.compute_positions_for_plotting()
@@ -268,7 +293,7 @@ class Env2DCylinder(Environment):
         # ------------------------------------------------------------------------
         # if necessary, make converge
         if self.n_iter_make_ready is not None:
-            self.u_, self.p_ = self.flow.evolve(self.Qs)
+            self.u_, self.p_ = self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
             path=''
             if "dump" in self.inspection_params:
                 path = 'results/area_out.pvd'
@@ -278,10 +303,14 @@ class Env2DCylinder(Environment):
                 #printiv(self.n_iter_make_ready)
 
             for _ in range(self.n_iter_make_ready):
-                self.u_, self.p_ = self.flow.evolve(self.Qs)
+                #print("flush")
+                self.u_, self.p_ = self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
+                print('shape, ', np.array(self.u_), np.array(self.p_))
 
                 self.probes_values = self.ann_probes.sample(self.u_, self.p_).flatten()
+                #print("flush0")
                 self.drag = self.drag_probe.sample(self.u_, self.p_)
+                #print("flush1")
                 self.lift = self.lift_probe.sample(self.u_, self.p_)
                 self.recirc_area = self.area_probe.sample(self.u_, self.p_)
 
@@ -309,12 +338,12 @@ class Env2DCylinder(Environment):
         if self.n_iter_make_ready is None:
             #Let's start in a random position of the vortex shading
             if self.optimization_params["random_start"]:
-                rd_advancement = np.random.randint(650)
+                rd_advancement = np.random.randint(650) # FIXME: This 650 should be hard-coding?
                 for j in range(rd_advancement):
-                    self.flow.evolve(self.Qs)
+                    self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
                 print("Simulated {} iterations before starting the control".format(rd_advancement))
 
-            self.u_, self.p_ = self.flow.evolve(self.Qs)
+            self.u_, self.p_ = self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
             path=''
             if "dump" in self.inspection_params:
                 path = 'results/area_out.pvd'
@@ -353,8 +382,10 @@ class Env2DCylinder(Environment):
         self.ready_to_use = True
 
     def write_history_parameters(self):
-        for crrt_jet in range(len(self.geometry_params["jet_positions"])):
-            self.history_parameters["jet_{}".format(crrt_jet)].extend(self.Qs[crrt_jet])
+        #for crrt_jet in range(len(self.geometry_params["jet_positions"])):
+        #    self.history_parameters["jet_{}".format(crrt_jet)].extend(self.Qs[crrt_jet])
+        self.history_parameters["slit_width"].extend(self.slit_width)
+        self.history_parameters["slit_angle"].extend(self.slit_angle)
 
         if self.output_params["probe_type"] == 'pressure':
             for crrt_probe in range(len(self.output_params["locations"])):
@@ -402,7 +433,7 @@ class Env2DCylinder(Environment):
         plt.figure()
         plot(self.u_)
         plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
-        plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
+        #plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
         plt.xlim([-self.geometry_params['front_distance'], self.geometry_params['length'] - self.geometry_params['front_distance']])
         plt.ylim([-self.geometry_params['bottom_distance'], self.geometry_params['width'] - self.geometry_params['bottom_distance']])
         plt.ylabel("Y")
@@ -413,7 +444,7 @@ class Env2DCylinder(Environment):
         p = plot(self.p_)
         cb = plt.colorbar(p, fraction=0.1, shrink=0.3)
         plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
-        plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
+        #plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
         plt.xlim([-self.geometry_params['front_distance'], self.geometry_params['length'] - self.geometry_params['front_distance']])
         plt.ylim([-self.geometry_params['bottom_distance'], self.geometry_params['width'] - self.geometry_params['bottom_distance']])
         plt.ylabel("Y")
@@ -427,15 +458,30 @@ class Env2DCylinder(Environment):
 
         linestyles = ['-', '--', ':', '-.']
 
-        for crrt_jet in range(len(self.geometry_params["jet_positions"])):
-            crrt_jet_data = self.history_parameters["jet_{}".format(crrt_jet)].get()
-            plt.plot(crrt_jet_data, label="jet {}".format(crrt_jet), linestyle=linestyles[crrt_jet], linewidth=1.5)
+        #for crrt_jet in range(len(self.geometry_params["jet_positions"])):
+        #    crrt_jet_data = self.history_parameters["jet_{}".format(crrt_jet)].get()
+        #    plt.plot(crrt_jet_data, label="jet {}".format(crrt_jet), linestyle=linestyles[crrt_jet], linewidth=1.5)
+        crrt_width_data = self.history_parameters["slit_width"].get()
+        crrt_angle_data = self.history_parameters["slit_angle"].get()
+        plt.plot(crrt_width_data, label="slit width", linestyle=linestyles[0], linewidth=1.5)
         plt.legend(loc=2)
         plt.ylabel("control Q")
         plt.xlabel("actuation step")
         plt.tight_layout()
         plt.pause(1.0)
-        plt.savefig("saved_figures/control_episode_{}.pdf".format(self.episode_number))
+        plt.savefig("saved_figures/width_control_episode_{}.pdf".format(self.episode_number))
+        plt.show()
+        plt.pause(2.0)
+
+        plt.figure()
+
+        plt.plot(crrt_angle_data, label="slit angle", linestyle=linestyles[0], linewidth=1.5)
+        plt.legend(loc=2)
+        plt.ylabel("control Q")
+        plt.xlabel("actuation step")
+        plt.tight_layout()
+        plt.pause(1.0)
+        plt.savefig("saved_figures/angle_control_episode_{}.pdf".format(self.episode_number))
         plt.show()
         plt.pause(2.0)
 
@@ -456,7 +502,7 @@ class Env2DCylinder(Environment):
         plt.pause(2.0)
 
     def visual_inspection(self):
-        total_number_subplots = 5
+        total_number_subplots = 6 # In the original code, it was 5. Since there are slit width and slit angle, set it to be 6
         crrt_subplot = 1
 
         if(not self.initialized_visualization and self.inspection_params["plot"] != False):
@@ -492,13 +538,24 @@ class Env2DCylinder(Environment):
 
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plt.cla()
-                for crrt_jet in range(len(self.geometry_params["jet_positions"])):
-                    crrt_jet_data = self.history_parameters["jet_{}".format(crrt_jet)].get()
-                    plt.plot(crrt_jet_data, label="jet {}".format(crrt_jet))
+                #for crrt_jet in range(len(self.geometry_params["jet_positions"])):
+                #    crrt_jet_data = self.history_parameters["jet_{}".format(crrt_jet)].get()
+                #    plt.plot(crrt_jet_data, label="jet {}".format(crrt_jet))
+                #plt.legend(loc=6)
+                #plt.ylabel("M.F.R.")
+                crrt_angle_data = self.history_parameters["slit_angle"].get()
+                plt.plot(crrt_angle_data, label="slit angle")
                 plt.legend(loc=6)
-                plt.ylabel("M.F.R.")
+                plt.ylabel("Slit Angle")
                 crrt_subplot += 1
 
+                plt.subplot(total_number_subplots, 1, crrt_subplot)
+                plt.cla()
+                crrt_width_data = self.history_parameters["slit_width"].get()
+                plt.plot(crrt_width_angle, label='slit width')
+                plt.legend(loc=6)
+                plot.ylabel("Slit Width")
+                crrt_subplot += 1
                 # plt.subplot(total_number_subplots, 1, crrt_subplot)
                 # plt.cla()
                 # for crrt_probe in range(len(self.output_params["locations"])):
@@ -745,8 +802,9 @@ class Env2DCylinder(Environment):
             if self.verbose > -1:
                 print("carefull, no action given; by default, no jet!")
 
-            nbr_jets = len(self.geometry_params["jet_positions"])
-            action = np.zeros((nbr_jets, ))
+            #nbr_jets = len(self.geometry_params["jet_positions"])
+            nbr_paras = 2 # slit width and angle
+            action = np.zeros(2, )
 
         if self.verbose > 2:
             print(action)
@@ -763,17 +821,16 @@ class Env2DCylinder(Environment):
                 # printiv(actions)
                 # printiv(self.Qs)
                 # self.Qs += self.optimization_params["smooth_control"] * (np.array(action) - self.Qs)  # the solution originally used in the JFM paper
-                self.Qs = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
+                #self.Qs = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
+                self.paras = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
             else:
-                self.Qs = np.transpose(np.array(action))
+                #self.Qs = np.transpose(np.array(action))
+                a = 2 # doing some other work to suppress a warning
 
-            # impose a zero net Qs
-            if "zero_net_Qs" in self.optimization_params:
-                if self.optimization_params["zero_net_Qs"]:
-                    self.Qs = self.Qs - np.mean(self.Qs)
+            self.sw, self.sa = self.paras[0], self.paras[1]
 
             # evolve one numerical timestep forward
-            self.u_, self.p_ = self.flow.evolve(self.Qs)
+            self.u_, self.p_ = self.flow.evolve(self.Qs, self.sw, self.sa)
 
             # displaying information that has to do with the solver itself
             self.visual_inspection()
