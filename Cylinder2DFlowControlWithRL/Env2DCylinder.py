@@ -131,6 +131,8 @@ class Env2DCylinder(Environment):
 
         self.simu_name = simu_name
 
+        self.sw, self.sa = self.geometry_params['slit_width'], self.geometry_params['slit_angle']
+
 
         #Relatif a l'ecriture des .csv
         name="output.csv"
@@ -154,6 +156,7 @@ class Env2DCylinder(Environment):
 
         self.start_class()
 
+        print("--- done init ---")
         #printi("--- done init ---")
 
     def start_class(self):
@@ -305,7 +308,7 @@ class Env2DCylinder(Environment):
             for _ in range(self.n_iter_make_ready):
                 #print("flush")
                 self.u_, self.p_ = self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
-                print('shape, ', np.array(self.u_), np.array(self.p_))
+                #print('shape, ', np.array(self.u_), np.array(self.p_))
 
                 self.probes_values = self.ann_probes.sample(self.u_, self.p_).flatten()
                 #print("flush0")
@@ -782,6 +785,7 @@ class Env2DCylinder(Environment):
             self.show_drag()
             self.show_control()
 
+        self.geometry_params['slit_angle'], self.geometry_params['slit_width'] = self.sa, self.sw
         self.start_class()
 
         next_state = np.transpose(np.array(self.probes_values))
@@ -827,7 +831,7 @@ class Env2DCylinder(Environment):
                 #self.Qs = np.transpose(np.array(action))
                 a = 2 # doing some other work to suppress a warning
 
-            self.sw, self.sa = self.paras[0], self.paras[1]
+            self.sw, self.sa = max(self.paras[0], 0.01), max(self.paras[1], 0.00) # FIXME: Temporarily adding these constraints
 
             # evolve one numerical timestep forward
             self.u_, self.p_ = self.flow.evolve(self.Qs, self.sw, self.sa)

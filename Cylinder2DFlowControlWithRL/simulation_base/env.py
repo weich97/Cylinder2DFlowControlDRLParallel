@@ -127,13 +127,14 @@ def resume_env(plot=False,
     verbose = 0
 
     number_steps_execution = int((simulation_duration/dt)/nb_actuations)
+    print("number of steps execution ", number_steps_execution)
 
     # ---------------------------------------------------------------------------------
     # do the initialization
 
     #On fait varier la valeur de n-iter en fonction de si on remesh
     if(remesh):
-        n_iter = int(10.0 / dt)
+        n_iter = int(1.0 / dt)
         # n_iter = int(5.0 / dt)
         # n_iter = int(1.0 / dt)
         #if(os.path.exists('mesh')):

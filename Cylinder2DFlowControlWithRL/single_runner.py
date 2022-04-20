@@ -55,36 +55,37 @@ if(os.path.exists("saved_models/test_strategy_avg.csv")):
     os.remove("saved_models/test_strategy_avg.csv")
 
 def one_run():
-    print("start simulation")
-    state = example_environment.reset()
-    example_environment.render = True
-
-    for k in range(10*nb_actuations):
-        #environment.print_state()
-        action = agent.act(state, deterministic=deterministic, independent=True)
-        state, terminal, reward = example_environment.execute(action)
-    # just for test, too few timesteps
-    # runner.run(episodes=10000, max_episode_timesteps=20, episode_finished=episode_finished)
-
-    data = np.genfromtxt("saved_models/test_strategy.csv", delimiter=";")
-    data = data[1:,1:]
-    m_data = np.average(data[len(data)//2:], axis=0)
-    nb_jets = len(m_data)-4
-    # Print statistics
-    print("Single Run finished. AvgDrag : {}, AvgRecircArea : {}".format(m_data[1], m_data[2]))
-
-    name = "test_strategy_avg.csv"
-    if(not os.path.exists("saved_models")):
-        os.mkdir("saved_models")
-    if(not os.path.exists("saved_models/"+name)):
-        with open("saved_models/"+name, "w") as csv_file:
-            spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
-            spam_writer.writerow(["Name", "Drag", "Lift", "RecircArea"] + ["Jet" + str(v) for v in range(nb_jets)])
-            spam_writer.writerow([example_environment.simu_name] + m_data[1:].tolist())
-    else:
-        with open("saved_models/"+name, "a") as csv_file:
-            spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
-            spam_writer.writerow([example_environment.simu_name] + m_data[1:].tolist())
+    for j in range(3):
+        print("start simulation ", j)
+        state = example_environment.reset()
+        example_environment.render = True
+    
+        for k in range(nb_actuations//2):
+            #environment.print_state()
+            action = agent.act(state, deterministic=deterministic, independent=True)
+            state, terminal, reward = example_environment.execute(action)
+        # just for test, too few timesteps
+        # runner.run(episodes=10000, max_episode_timesteps=20, episode_finished=episode_finished)
+    
+        data = np.genfromtxt("saved_models/test_strategy.csv", delimiter=";")
+        data = data[1:,1:]
+        m_data = np.average(data[len(data)//2:], axis=0)
+        nb_jets = len(m_data)-4
+        # Print statistics
+        print("Single Run finished. AvgDrag : {}, AvgRecircArea : {}".format(m_data[1], m_data[2]))
+    
+        name = "test_strategy_avg.csv"
+        if(not os.path.exists("saved_models")):
+            os.mkdir("saved_models")
+        if(not os.path.exists("saved_models/"+name)):
+            with open("saved_models/"+name, "w") as csv_file:
+                spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
+                spam_writer.writerow(["Name", "Drag", "Lift", "RecircArea"] + ["Jet" + str(v) for v in range(nb_jets)])
+                spam_writer.writerow([example_environment.simu_name] + m_data[1:].tolist())
+        else:
+            with open("saved_models/"+name, "a") as csv_file:
+                spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
+                spam_writer.writerow([example_environment.simu_name] + m_data[1:].tolist())
 
 
 

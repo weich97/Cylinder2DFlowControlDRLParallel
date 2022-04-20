@@ -20,12 +20,17 @@ class FlowSolver(object):
         self.solver_params = solver_params
         self.root = path_root
 
+        # Update mesh
+        #generate_mesh_slit(geometry_params, template=self.geometry_params['template'])
+        subprocess.call(['python3 generate_msh.py -output mesh/geometry_2d.geo -slit_angle %f -slit_width %f' % (geometry_params['slit_angle'], geometry_params['slit_width'])], shell = True)
+        convert('mesh/geometry_2d.msh', 'mesh/geometry_2d.h5')
+
         mesh_file = geometry_params['mesh']
 
         # Load mesh with markers
         mesh = Mesh()
         comm = mesh.mpi_comm()
-        mesh_file = "/home/fenics/host/Cylinder2DFlowControlDRLParallel/Cylinder2DFlowControlWithRL/mesh/geometry_2d.h5" #FIXME: Now use the absolute path
+        mesh_file = "mesh/geometry_2d.h5"
         h5 = HDF5File(comm, mesh_file, 'r')
 
         h5.read(mesh, 'mesh', False)
@@ -33,7 +38,6 @@ class FlowSolver(object):
         surfaces = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
         h5.read(surfaces, 'facet')
 
-        print('length init', mesh.num_vertices())
         # These tags should be hardcoded by gmsh during generation
         self.inlet_tag = 3
         self.outlet_tag = 2
@@ -54,13 +58,12 @@ class FlowSolver(object):
         p, q = TrialFunction(Q), TestFunction(Q)
 
         u_n, p_n = Function(V), Function(Q)
-        u_nodal_values = u_n.vector()
-        u_array = np.array(u_nodal_values)
-        coor = mesh.coordinates()
-        print('init ', mesh.num_vertices(), len(u_array))
-        if mesh.num_vertices() == len(u_array):
-            for i in range(mesh.num_vertices()):
-                print('u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i]))
+        #u_nodal_values = u_n.vector()
+        #u_array = np.array(u_nodal_values)
+        #coor = mesh.coordinates()
+        #if mesh.num_vertices() == len(u_array):
+        #    for i in range(mesh.num_vertices()):
+        #        print('u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i]))
         # Starting from rest or are we given the initial state
         for path, func, name in zip(('u_init', 'p_init'), (u_n, p_n), ('u0', 'p0')):
             if path in flow_params:
@@ -107,7 +110,7 @@ class FlowSolver(object):
         L3 = dot(u_, v)*dx - dt*dot(nabla_grad(p_ - p_n), v)*dx
 
         inflow_profile = flow_params['inflow_profile'](mesh, degree=2)
-        self.inflow_profile = inflow_profile
+        #self.inflow_profile = inflow_profile
         # Define boundary conditions, first those that are constant in time
         bcu_inlet = DirichletBC(V, inflow_profile, surfaces, inlet_tag)
         # No slip
@@ -185,7 +188,7 @@ class FlowSolver(object):
         self.bs = bs
         self.u_, self.u_n = u_, u_n
         self.p_, self.p_n= p_, p_n
-        print('flow, ', np.array(self.u_), np.array(self.p_))
+        #print('flow, ', np.array(self.u_), np.array(self.p_))
 
         # Rename u_, p_ for to standard names (simplifies processing)
         u_.rename('velocity', '0')
@@ -399,7 +402,6 @@ class FlowSolver(object):
         '''Make one time step with the given values of jet boundary conditions'''
         assert len(jet_bc_values) == len(self.jets)
 
-        #print("test")
         # Update bc expressions
         for Q, jet in zip(jet_bc_values, self.jets): jet.Q = Q
 
@@ -410,7 +412,7 @@ class FlowSolver(object):
         # Update mesh and bcs
         #generate_mesh_slit(geometry_params, template=self.geometry_params['template'])
 
-        self.bc_enforcement(flow_params, geometry_params, solver_params)
+        #self.bc_enforcement(flow_params, geometry_params, solver_params)
 
         # Make a step
         self.gtime += self.dt(0)
