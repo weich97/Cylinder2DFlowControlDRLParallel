@@ -131,8 +131,6 @@ class Env2DCylinder(Environment):
 
         self.simu_name = simu_name
 
-        self.sw, self.sa = self.geometry_params['slit_width'], self.geometry_params['slit_angle']
-
 
         #Relatif a l'ecriture des .csv
         name="output.csv"
@@ -154,10 +152,25 @@ class Env2DCylinder(Environment):
 
         self.initialized_visualization = False
 
-        self.start_class()
+        # No need to execute the start class here as in the reset function, start_class is executed
+        #self.start_class()
+        self.start_shadow_class()
 
         print("--- done init ---")
         #printi("--- done init ---")
+
+    def start_shadow_class(self):
+        self.solver_step = 0
+        self.accumulated_drag = 0
+        self.accumulated_lift = 0
+
+        self.initialized_output = False
+
+        self.resetted_number_probes = False
+
+        self.area_probe = None
+
+        self.history_parameters = {}
 
     def start_class(self):
         self.solver_step = 0
@@ -206,11 +219,12 @@ class Env2DCylinder(Environment):
                 print("Remesh")
                 #printi("generate_mesh start...")
 
+            print('template ', self.geometry_params['template'])
             generate_mesh_slit(self.geometry_params, template=self.geometry_params['template'])
 
             if self.verbose > 0:
                 print("generate_mesh done!")
-            print('msh', msh_file)
+            print('msh', msh_file, h5_file)
             assert os.path.exists(msh_file)
 
             convert(msh_file, h5_file)
@@ -219,6 +233,7 @@ class Env2DCylinder(Environment):
 
         # ------------------------------------------------------------------------
         # if necessary, load initialization fields
+        # if n_iter_make_ready is None, then load from the initilization file
         if self.n_iter_make_ready is None:
             if self.verbose > 0:
                 print("Load initial flow")
@@ -240,7 +255,7 @@ class Env2DCylinder(Environment):
                 #printi("Warning!! The number of jets was not set in the loaded hdf5 file")
 
             if not "lift" in self.history_parameters:
-                self.history_parameters["lift"]# = RingBuffer(self.size_history)
+                self.history_parameters["lift"] = RingBuffer(self.size_history)
                 #printi("Warning!! No value for# the lift founded")
 
             if not "recirc_area" in self.history_parameters:
@@ -263,7 +278,7 @@ class Env2DCylinder(Environment):
                 self.resetted_number_probes = True
 
         # ------------------------------------------------------------------------
-        # create the flow simulation object
+        # create the flow simulation object; the mesh will be updated
         self.flow = FlowSolver(self.flow_params, self.path_root, self.geometry_params, self.solver_params)
 
         # ------------------------------------------------------------------------
@@ -365,6 +380,7 @@ class Env2DCylinder(Environment):
 
             # time.sleep(10)
 
+        #print('self.size_history ', self.size_history)
         # ----------------------------------------------------------------------
         # if necessary, fill the probes buffer
         if self.resetted_number_probes:
@@ -710,6 +726,7 @@ class Env2DCylinder(Environment):
             self.episode_lifts = np.append(self.episode_lifts, [self.history_parameters["lift"].get()[-1]])
 
             if(self.last_episode_number != self.episode_number and "single_run" in self.inspection_params and self.inspection_params["single_run"] == False):
+                print('output_data 3')
                 self.last_episode_number = self.episode_number
                 avg_drag = np.average(self.episode_drags[len(self.episode_drags)//2:])
                 avg_area = np.average(self.episode_areas[len(self.episode_areas)//2:])
@@ -785,7 +802,6 @@ class Env2DCylinder(Environment):
             self.show_drag()
             self.show_control()
 
-        self.geometry_params['slit_angle'], self.geometry_params['slit_width'] = self.sa, self.sw
         self.start_class()
 
         next_state = np.transpose(np.array(self.probes_values))
@@ -831,10 +847,11 @@ class Env2DCylinder(Environment):
                 #self.Qs = np.transpose(np.array(action))
                 a = 2 # doing some other work to suppress a warning
 
-            self.sw, self.sa = max(self.paras[0], 0.01), max(self.paras[1], 0.00) # FIXME: Temporarily adding these constraints
+            self.geometry_params['slit_width'] = max(min(self.paras[0], 0.2), 0.01)
+            self.geometry_params['slit_angle'] = min(max(self.paras[1], 0.0), 180.0)
 
             # evolve one numerical timestep forward
-            self.u_, self.p_ = self.flow.evolve(self.Qs, self.sw, self.sa)
+            self.u_, self.p_ = self.flow.evolve(self.Qs, self.geometry_params['slit_width'], self.geometry_params['slit_angle'])
 
             # displaying information that has to do with the solver itself
             self.visual_inspection()

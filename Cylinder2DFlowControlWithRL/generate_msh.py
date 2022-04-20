@@ -61,14 +61,14 @@ def generate_mesh_slit(args, template='geometry_2d.geo', dim=2):
 
     split = list(map(lambda s: s.startswith('DefineConstant'), old)).index(True)
 
-    slit_angle = float(args['slit_angle'])/180*math.pi
+    slit_angle = float(args['slit_angle'])/180.0*math.pi
     slit_angle = 'slit_angle[] = {%s};\n' % (', '.join(list(map(str, [slit_angle, slit_angle + math.pi]))))
     slit_width = args.pop('slit_width')
     slit_width = 'slit_ratio = {%f};\n' % slit_width
     body = ''.join([slit_angle] + [slit_width] + old[split:])
 
     output = args.pop('output')
-    print(output)
+    print('output', output, slit_width, slit_angle)
 
     if not output:
         output = template
@@ -134,13 +134,13 @@ if __name__ == '__main__':
                         help='Jet width in degrees')
 
     # Slit perameters
-    parser.add_argument('-slit_angle', default=10,
+    parser.add_argument('-slit_angle', default=0.0,
                         help='Angle of the slit')
     parser.add_argument('-slit_width', default=0.1, type=float,
                         help='Slit width')
 
     # Refine geometry
-    parser.add_argument('-clscale', default=1, type=float,
+    parser.add_argument('-clscale', default=1.0, type=float,
                         help='Scale the mesh size relative to give')
 
     # Coarse paras

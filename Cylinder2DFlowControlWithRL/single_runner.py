@@ -57,12 +57,14 @@ if(os.path.exists("saved_models/test_strategy_avg.csv")):
 def one_run():
     for j in range(3):
         print("start simulation ", j)
+        # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
         state = example_environment.reset()
         example_environment.render = True
     
-        for k in range(nb_actuations//2):
+        for k in range(nb_actuations//4):
             #environment.print_state()
             action = agent.act(state, deterministic=deterministic, independent=True)
+            # After initialization, we need DRL actions
             state, terminal, reward = example_environment.execute(action)
         # just for test, too few timesteps
         # runner.run(episodes=10000, max_episode_timesteps=20, episode_finished=episode_finished)

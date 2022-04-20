@@ -49,9 +49,9 @@ def resume_env(plot=False,
                     'jet_radius': 0.05,
                     'jet_positions': [90+jet_angle, 270-jet_angle],
                     'jet_width': 10,
-                    'slit_angle': 10.0,
+                    'slit_angle': 0.0,
                     'slit_width': 0.1,
-                    'clscale': 0.25,
+                    'clscale': 1.0,
                     'template': './mesh/geometry_2d.geo',
                     'remesh': remesh}
 
