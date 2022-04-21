@@ -131,6 +131,11 @@ class Env2DCylinder(Environment):
 
         self.simu_name = simu_name
 
+        self.paras = [0.0, 0.0] #initialization (These are incremental parameters)
+        self.slit_width = self.geometry_params['slit_width']
+        self.slit_angle = self.geometry_params['slit_angle']
+        print('slit_angle', self.slit_angle)
+
 
         #Relatif a l'ecriture des .csv
         name="output.csv"
@@ -299,9 +304,9 @@ class Env2DCylinder(Environment):
         # No flux from jets for starting
         self.Qs = np.zeros(len(self.geometry_params['jet_positions']))
         self.action = np.zeros(len(self.geometry_params['jet_positions']))
-        # slit width and angle use default values 
-        self.slit_width = 0.1
-        self.slit_angle = 0.0
+        ## slit width and angle use default values 
+        #self.slit_width = 0.1
+        #self.slit_angle = 0.0
   
         # ------------------------------------------------------------------------
         # prepare the arrays for plotting positions
@@ -843,12 +848,15 @@ class Env2DCylinder(Environment):
                 # self.Qs += self.optimization_params["smooth_control"] * (np.array(action) - self.Qs)  # the solution originally used in the JFM paper
                 #self.Qs = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
                 self.paras = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
+                #self.paras = 0.0*self.paras
+                #print('paras', self.paras)
             else:
                 #self.Qs = np.transpose(np.array(action))
                 a = 2 # doing some other work to suppress a warning
 
-            self.geometry_params['slit_width'] = max(min(self.paras[0], 0.2), 0.01)
-            self.geometry_params['slit_angle'] = min(max(self.paras[1], 0.0), 180.0)
+            #Moved this portion to the main program, such as single_runner.py
+            #self.geometry_params['slit_width'] = max(min(self.paras[0], 0.2), 0.01)
+            #self.geometry_params['slit_angle'] = min(max(self.paras[1], 0.0), 180.0)
 
             # evolve one numerical timestep forward
             self.u_, self.p_ = self.flow.evolve(self.Qs, self.geometry_params['slit_width'], self.geometry_params['slit_angle'])
@@ -872,6 +880,8 @@ class Env2DCylinder(Environment):
             self.accumulated_drag += self.drag
             self.accumulated_lift += self.lift
 
+        self.paras[0] = 5.0 * self.paras[0]
+        self.paras[1] = 100.0 * self.paras[1]
         # TODO: the next_state may incorporte more information: maybe some time information?
         next_state = np.transpose(np.array(self.probes_values))
 

@@ -134,7 +134,7 @@ if __name__ == '__main__':
                         help='Jet width in degrees')
 
     # Slit perameters
-    parser.add_argument('-slit_angle', default=0.0,
+    parser.add_argument('-slit_angle', default=90.0,
                         help='Angle of the slit')
     parser.add_argument('-slit_width', default=0.1, type=float,
                         help='Slit width')

@@ -2,11 +2,16 @@ import os
 import socket
 import numpy as np
 import csv
+import math
 
 from tensorforce.agents import Agent
 from tensorforce.execution import ParallelRunner
 
 from simulation_base.env import resume_env, nb_actuations
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 example_environment = resume_env(plot=False, dump=100, single_run=True)
 
@@ -54,20 +59,33 @@ if(os.path.exists("saved_models/test_strategy.csv")):
 if(os.path.exists("saved_models/test_strategy_avg.csv")):
     os.remove("saved_models/test_strategy_avg.csv")
 
+x = []
+angle = []
+width = []
+
 def one_run():
-    for j in range(3):
-        print("start simulation ", j)
+    for j in range(1000):
         # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
         state = example_environment.reset()
         example_environment.render = True
+        example_environment.geometry_params['slit_width'] += example_environment.paras[0]
+        example_environment.geometry_params['slit_width'] = max(min(example_environment.geometry_params['slit_width'], 0.2), 0.01)
+        example_environment.geometry_params['slit_angle'] += example_environment.paras[1]*180/math.pi
+        example_environment.geometry_params['slit_angle'] = min(max(example_environment.geometry_params['slit_angle'], 0.0), 180.0)
+        sw = example_environment.geometry_params['slit_width']
+        sa = example_environment.geometry_params['slit_angle']
+        print("start simulation ", j, sw, sa)
     
-        for k in range(nb_actuations//4):
+        for k in range(nb_actuations//2):
             #environment.print_state()
             action = agent.act(state, deterministic=deterministic, independent=True)
             # After initialization, we need DRL actions
             state, terminal, reward = example_environment.execute(action)
         # just for test, too few timesteps
         # runner.run(episodes=10000, max_episode_timesteps=20, episode_finished=episode_finished)
+
+        angle.append(example_environment.geometry_params['slit_angle'])
+        width.append(example_environment.geometry_params['slit_width'])
     
         data = np.genfromtxt("saved_models/test_strategy.csv", delimiter=";")
         data = data[1:,1:]
@@ -89,6 +107,15 @@ def one_run():
                 spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
                 spam_writer.writerow([example_environment.simu_name] + m_data[1:].tolist())
 
+    with open('angle.dat', 'a', encoding = 'UTF-8') as angle_file:
+        for i in range(len(angle)):
+            angle_file.write(str(angle[i]))
+            angle_file.write('\n')
+
+    with open('width.dat', 'w', encoding = 'UTF-8') as width_file:
+        for i in range(len(width)):
+            width_file.write(str(width[i]))
+            width_file.write('\n')
 
 
 if not deterministic:
