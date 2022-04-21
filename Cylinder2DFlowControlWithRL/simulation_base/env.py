@@ -122,7 +122,7 @@ def resume_env(plot=False,
                         "single_run":single_run
                         }  
 
-    reward_function = 'drag_plain_lift'
+    reward_function = 'plain_drag'
 
     verbose = 0
 

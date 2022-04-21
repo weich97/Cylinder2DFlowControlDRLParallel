@@ -880,7 +880,7 @@ class Env2DCylinder(Environment):
             self.accumulated_drag += self.drag
             self.accumulated_lift += self.lift
 
-        self.paras[0] = 5.0 * self.paras[0]
+        self.paras[0] = 10.0 * self.paras[0]
         self.paras[1] = 100.0 * self.paras[1]
         # TODO: the next_state may incorporte more information: maybe some time information?
         next_state = np.transpose(np.array(self.probes_values))
