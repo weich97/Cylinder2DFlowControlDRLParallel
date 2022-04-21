@@ -63,8 +63,26 @@ x = []
 angle = []
 width = []
 
+def plt_angle_width():
+    angle = np.loadtxt('angle.dat')
+    plt.subplot(2,1,1)
+    plt.plot(range(len(angle)), angle, linestyle = '-', marker = 'o', color = 'b')
+    plt.xlim(0.0, len(angle) + 10)
+    plt.ylim(0.0, 180)
+    plt.xlabel('Episode')
+    plt.ylabel('Width')
+    width = np.loadtxt('width.dat')
+    plt.subplot(2,1,2)
+    plt.plot(range(len(width)), width, linestyle = '-', marker = 'o', color = 'b')
+    plt.xlim(0.0, len(width) + 10)
+    plt.ylim(0.0, 0.2)
+    plt.xlabel('Episode')
+    plt.ylabel('Angle')
+    plt.savefig('angle_width.png', bbox_inches = 'tight')
+    plt.close()
+
 def one_run():
-    for j in range(1000):
+    for j in range(50):
         # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
         state = example_environment.reset()
         example_environment.render = True
@@ -107,7 +125,7 @@ def one_run():
                 spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
                 spam_writer.writerow([example_environment.simu_name] + m_data[1:].tolist())
 
-    with open('angle.dat', 'a', encoding = 'UTF-8') as angle_file:
+    with open('angle.dat', 'w', encoding = 'UTF-8') as angle_file:
         for i in range(len(angle)):
             angle_file.write(str(angle[i]))
             angle_file.write('\n')
@@ -117,6 +135,8 @@ def one_run():
             width_file.write(str(width[i]))
             width_file.write('\n')
 
+    plt_angle_width()
+
 
 if not deterministic:
     for _ in range(10):
@@ -124,3 +144,5 @@ if not deterministic:
 
 else:
     one_run()
+
+
