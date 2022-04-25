@@ -52,7 +52,7 @@ def generate_mesh(args, template='geometry_2d.template_geo', dim=2):
     return subprocess.call(['gmsh -%d -clscale %g %s' % (dim, scale, unrolled)], shell=True)
 
 
-def generate_mesh_slit(args, template='geometry_2d.geo', dim=2):
+def generate_mesh_slit(args, template='mesh/geometry_2d.geo', dim=2):
     '''Modify template according args and make gmsh generate the mesh'''
     assert os.path.exists(template)
     args = args.copy()
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate msh file from GMSH',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # Optional output geo file
-    parser.add_argument('-output', default='geometry_2d.geo', type=str, help='A geofile for writing out geometry')
+    parser.add_argument('-output', default='mesh/geometry_2d.geo', type=str, help='A geofile for writing out geometry')
     # Geometry
     parser.add_argument('-length', default=2.2, type=float,
                         help='Channel length')

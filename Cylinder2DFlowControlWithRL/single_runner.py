@@ -68,7 +68,7 @@ def plt_angle_width():
     plt.subplot(2,1,1)
     plt.plot(range(len(angle)), angle, linestyle = '-', marker = 'o', color = 'b')
     plt.xlim(0.0, len(angle) + 10)
-    plt.ylim(0.0, 200)
+    plt.ylim(0.0, 100)
     plt.xlabel('Episode')
     plt.ylabel('Angle')
     width = np.loadtxt('width.dat')
@@ -82,7 +82,7 @@ def plt_angle_width():
     plt.close()
 
 def one_run():
-    for j in range(50):
+    for j in range(200):
         # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
         state = example_environment.reset()
         example_environment.render = True

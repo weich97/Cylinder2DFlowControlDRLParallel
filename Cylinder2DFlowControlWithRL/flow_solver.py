@@ -201,7 +201,7 @@ class FlowSolver(object):
         self.viscosity = mu
         self.density = rho
         self.normal = n
-        self.cylinder_surface_tags = [cylinder_noslip_tag] + jet_tags
+        self.cylinder_surface_tags = [cylinder_noslip_tag]
 
 
     def bc_enforcement(self, flow_params, geometry_params, solver_params):
@@ -367,7 +367,7 @@ class FlowSolver(object):
             if not solver_type == 'lu':
                 s.parameters['relative_tolerance'] = 1E-8
                 s.parameters['monitor_convergence'] = True
-
+  
         gtime = 0.  # External clock
 
         # Things to remeber for evolution
