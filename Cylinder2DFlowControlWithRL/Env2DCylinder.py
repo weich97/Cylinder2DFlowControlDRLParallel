@@ -46,6 +46,7 @@ import shutil
 # environment.actions = {'max_value': 1.0, 'shape': (1,), 'min_value': -1.0, 'type': 'float'}
 
 
+# This function is also in env.py, so not used here
 def constant_profile(mesh, degree):
     '''
     Time independent inflow profile.
@@ -148,7 +149,7 @@ class Env2DCylinder(Environment):
         if(not last_row is None):
             self.episode_number = int(last_row[0])
             self.last_episode_number = int(last_row[0])
-        else:
+        else:  
             self.last_episode_number = 0
             self.episode_number = 0
         self.episode_drags = np.array([])
@@ -234,7 +235,7 @@ class Env2DCylinder(Environment):
 
             convert(msh_file, h5_file)
             assert os.path.exists(h5_file)
-            print('self.n_iter_make_ready ', self.n_iter_make_ready)
+            print('self.n_iter_make_ready ', self.n_iter_make_ready) # Now it is always 2000
 
         # ------------------------------------------------------------------------
         # if necessary, load initialization fields
@@ -303,7 +304,8 @@ class Env2DCylinder(Environment):
         # ------------------------------------------------------------------------
         # No flux from jets for starting
         self.Qs = np.zeros(len(self.geometry_params['jet_positions']))
-        self.action = np.zeros(len(self.geometry_params['jet_positions']))
+        self.action = np.zeros(2) # slit width and angle
+        #self.action = np.zeros(len(self.geometry_params['jet_positions']))
         ## slit width and angle use default values 
         #self.slit_width = 0.1
         #self.slit_angle = 0.0
@@ -318,6 +320,7 @@ class Env2DCylinder(Environment):
         if self.n_iter_make_ready is not None:
             self.u_, self.p_ = self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
             path=''
+            print('Env2DCylinder.py test dump ', self.verbose)
             if "dump" in self.inspection_params:
                 path = 'results/area_out.pvd'
             self.area_probe = RecirculationAreaProbe(self.u_, 0, store_path=path)
@@ -343,6 +346,8 @@ class Env2DCylinder(Environment):
 
                 self.solver_step += 1
 
+        # No need to execute the following for the case of slit width and angle
+        # but it is also ok to execute the following as the cases are close to each other
         if self.n_iter_make_ready is not None:
             encoding = XDMFFile.Encoding.HDF5
             mesh = convert(msh_file, h5_file)
@@ -440,6 +445,7 @@ class Env2DCylinder(Environment):
             self.list_positions_probes_x.append(crrt_probe[0])
             self.list_positions_probes_y.append(crrt_probe[1])
 
+        # The following are not important if no jets
         # where the jets are
         radius_cylinder = self.geometry_params['cylinder_size'] / 2.0 / self.geometry_params['clscale']
         self.list_positions_jets_x = []
@@ -526,9 +532,10 @@ class Env2DCylinder(Environment):
         plt.pause(2.0)
 
     def visual_inspection(self):
-        total_number_subplots = 6 # In the original code, it was 5. Since there are slit width and slit angle, set it to be 6
+        total_number_subplots = 2 # In the original code, it was 5. Since there are slit width and slit angle, set it to be 6
         crrt_subplot = 1
 
+        #print('solver_step ', self.initialized_visualization, self.inspection_params["plot"])
         if(not self.initialized_visualization and self.inspection_params["plot"] != False):
             plt.ion()
             plt.subplots(total_number_subplots, 1)
@@ -536,125 +543,136 @@ class Env2DCylinder(Environment):
             # ax.set_ylim([0, 1024])
 
             self.initialized_visualization = True
+            #print('solver_step', self.solver_step)
 
         if("plot" in self.inspection_params and self.inspection_params["plot"] != False):
             modulo_base = self.inspection_params["plot"]
+            #print('solver_step00 ', self.solver_step, len(self.u_), modulo_base)
 
-            if self.solver_step % modulo_base == 0:
+            if (self.solver_step + 1) % modulo_base == 0:
+
+                print('solver_step0 ', self.solver_step, len(self.u_), modulo_base)
 
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plot(self.u_)
                 plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
-                plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
+                #plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
                 plt.xlim([-self.geometry_params['front_distance'], self.geometry_params['length'] - self.geometry_params['front_distance']])
                 plt.ylim([-self.geometry_params['bottom_distance'], self.geometry_params['width'] - self.geometry_params['bottom_distance']])
                 plt.ylabel("V")
                 crrt_subplot += 1
 
+                print('solver_step1 ', self.solver_step)
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plot(self.p_)
                 plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
-                plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
+                #plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
                 plt.xlim([-self.geometry_params['front_distance'], self.geometry_params['length'] - self.geometry_params['front_distance']])
                 plt.ylim([-self.geometry_params['bottom_distance'], self.geometry_params['width'] - self.geometry_params['bottom_distance']])
                 plt.ylabel("P")
                 crrt_subplot += 1
 
-                plt.subplot(total_number_subplots, 1, crrt_subplot)
-                plt.cla()
-                #for crrt_jet in range(len(self.geometry_params["jet_positions"])):
-                #    crrt_jet_data = self.history_parameters["jet_{}".format(crrt_jet)].get()
-                #    plt.plot(crrt_jet_data, label="jet {}".format(crrt_jet))
-                #plt.legend(loc=6)
-                #plt.ylabel("M.F.R.")
-                crrt_angle_data = self.history_parameters["slit_angle"].get()
-                plt.plot(crrt_angle_data, label="slit angle")
-                plt.legend(loc=6)
-                plt.ylabel("Slit Angle")
-                crrt_subplot += 1
-
-                plt.subplot(total_number_subplots, 1, crrt_subplot)
-                plt.cla()
-                crrt_width_data = self.history_parameters["slit_width"].get()
-                plt.plot(crrt_width_angle, label='slit width')
-                plt.legend(loc=6)
-                plot.ylabel("Slit Width")
-                crrt_subplot += 1
-                # plt.subplot(total_number_subplots, 1, crrt_subplot)
-                # plt.cla()
-                # for crrt_probe in range(len(self.output_params["locations"])):
-                #     if self.output_params["probe_type"] == 'pressure':
-                #         crrt_probe_data = self.history_parameters["probe_{}".format(crrt_probe)].get()
-                #         plt.plot(crrt_probe_data, label="probe {}".format(crrt_probe))
-                #     elif self.output_params["probe_type"] == 'velocity':
-                #         crrt_probe_data = self.history_parameters["probe_{}_u".format(crrt_probe)].get()
-                #         plt.plot(crrt_probe_data, label="probe {}".format(crrt_probe))
-                #         crrt_probe_data = self.history_parameters["probe_{}_v".format(crrt_probe)].get()
-                #         plt.plot(crrt_probe_data, label="probe {}".format(crrt_probe))
-                # # plt.legend(loc=6)
-                # if self.output_params["probe_type"] == "pressure":
-                #     plt.ylabel("pressure")
-                # elif self.output_params["probe_type"] == "velocity":
-                #     plt.ylabel("velocity")
-                # if "range_pressure_plot" in self.inspection_params:
-                #     range_pressure_plot = self.inspection_params["range_pressure_plot"]
-                #     plt.ylim(range_pressure_plot)
-                # crrt_subplot += 1
-
-                plt.subplot(total_number_subplots, 1, crrt_subplot)
-                ax1 = plt.gca()
-                plt.cla()
-
-                crrt_drag = self.history_parameters["drag"].get()
-
-                ax1.plot(crrt_drag, color='r', linestyle='-')
-                if 'line_drag' in self.inspection_params:
-                    ax1.plot([0, self.size_history - 1],
-                             [self.inspection_params['line_drag'], self.inspection_params['line_drag']],
-                             color='r',
-                             linestyle='--')
-
-                ax1.set_ylabel("drag")
-                if "range_drag_plot" in self.inspection_params:
-                    range_drag_plot = self.inspection_params["range_drag_plot"]
-                    ax1.set_ylim(range_drag_plot)
-
-                ax2 = ax1.twinx()
-
-                crrt_lift = self.history_parameters["lift"].get()
-
-                ax2.plot(crrt_lift, color='b', linestyle='-', label="lift")
-                if 'line_lift' in self.inspection_params:
-                    ax2.plot([0, self.size_history - 1],
-                             [self.inspection_params['line_lift'], self.inspection_params['line_lift']],
-                             color='b',
-                             linestyle='--')
-
-                ax2.set_ylabel("lift")
-                if "range_lift_plot" in self.inspection_params:
-                    range_lift_plot = self.inspection_params["range_lift_plot"]
-                    ax2.set_ylim(range_lift_plot)
-
-                plt.xlabel("buffer steps")
-
-                crrt_subplot += 1
-
-
-                plt.subplot(total_number_subplots, 1, crrt_subplot)
-                plt.cla()
-                crrt_area = self.history_parameters["recirc_area"].get()
-                plt.plot(crrt_area)
-                plt.ylabel("RecArea")
-                plt.xlabel("buffer steps")
-                #if "range_drag_plot" in self.inspection_params:
-                #    range_drag_plot = self.inspection_params["range_drag_plot"]
-                plt.ylim([0, 0.03])
-                crrt_subplot += 1
+#                print('solver_step2 ', self.solver_step)
+#                plt.subplot(total_number_subplots, 1, crrt_subplot)
+#                plt.cla()
+#                #for crrt_jet in range(len(self.geometry_params["jet_positions"])):
+#                #    crrt_jet_data = self.history_parameters["jet_{}".format(crrt_jet)].get()
+#                #    plt.plot(crrt_jet_data, label="jet {}".format(crrt_jet))
+#                #plt.legend(loc=6)
+#                #plt.ylabel("M.F.R.")
+#                crrt_angle_data = self.history_parameters["slit_angle"].get()
+#                plt.plot(crrt_angle_data, label="slit angle")
+#                plt.legend(loc=6)
+#                plt.ylabel("Slit Angle")
+#                crrt_subplot += 1
+#
+#                print('solver_step3 ', self.solver_step)
+#                plt.subplot(total_number_subplots, 1, crrt_subplot)
+#                plt.cla()
+#                crrt_width_data = self.history_parameters["slit_width"].get()
+#                plt.plot(crrt_width_data, label='slit width')
+#                plt.legend(loc=6)
+#                plt.ylabel("Slit Width")
+#                crrt_subplot += 1
+#                # plt.subplot(total_number_subplots, 1, crrt_subplot)
+#                # plt.cla()
+#                # for crrt_probe in range(len(self.output_params["locations"])):
+#                #     if self.output_params["probe_type"] == 'pressure':
+#                #         crrt_probe_data = self.history_parameters["probe_{}".format(crrt_probe)].get()
+#                #         plt.plot(crrt_probe_data, label="probe {}".format(crrt_probe))
+#                #     elif self.output_params["probe_type"] == 'velocity':
+#                #         crrt_probe_data = self.history_parameters["probe_{}_u".format(crrt_probe)].get()
+#                #         plt.plot(crrt_probe_data, label="probe {}".format(crrt_probe))
+#                #         crrt_probe_data = self.history_parameters["probe_{}_v".format(crrt_probe)].get()
+#                #         plt.plot(crrt_probe_data, label="probe {}".format(crrt_probe))
+#                # # plt.legend(loc=6)
+#                # if self.output_params["probe_type"] == "pressure":
+#                #     plt.ylabel("pressure")
+#                # elif self.output_params["probe_type"] == "velocity":
+#                #     plt.ylabel("velocity")
+#                # if "range_pressure_plot" in self.inspection_params:
+#                #     range_pressure_plot = self.inspection_params["range_pressure_plot"]
+#                #     plt.ylim(range_pressure_plot)
+#                # crrt_subplot += 1
+#
+#                print('solver_step4 ', self.solver_step)
+#                plt.subplot(total_number_subplots, 1, crrt_subplot)
+#                ax1 = plt.gca()
+#                plt.cla()
+#
+#                crrt_drag = self.history_parameters["drag"].get()
+#
+#                ax1.plot(crrt_drag, color='r', linestyle='-')
+#                if 'line_drag' in self.inspection_params:
+#                    ax1.plot([0, self.size_history - 1],
+#                             [self.inspection_params['line_drag'], self.inspection_params['line_drag']],
+#                             color='r',
+#                             linestyle='--')
+#
+#                ax1.set_ylabel("drag")
+#                if "range_drag_plot" in self.inspection_params:
+#                    range_drag_plot = self.inspection_params["range_drag_plot"]
+#                    ax1.set_ylim(range_drag_plot)
+#
+#                ax2 = ax1.twinx()
+#
+#                crrt_lift = self.history_parameters["lift"].get()
+#
+#                ax2.plot(crrt_lift, color='b', linestyle='-', label="lift")
+#                if 'line_lift' in self.inspection_params:
+#                    ax2.plot([0, self.size_history - 1],
+#                             [self.inspection_params['line_lift'], self.inspection_params['line_lift']],
+#                             color='b',
+#                             linestyle='--')
+#
+#                ax2.set_ylabel("lift")
+#                if "range_lift_plot" in self.inspection_params:
+#                    range_lift_plot = self.inspection_params["range_lift_plot"]
+#                    ax2.set_ylim(range_lift_plot)
+#
+#                plt.xlabel("buffer steps")
+#
+#                crrt_subplot += 1
+#
+#
+#                print('solver_step5 ', self.solver_step)
+#                plt.subplot(total_number_subplots, 1, crrt_subplot)
+#                plt.cla()
+#                crrt_area = self.history_parameters["recirc_area"].get()
+#                plt.plot(crrt_area)
+#                plt.ylabel("RecArea")
+#                plt.xlabel("buffer steps")
+#                #if "range_drag_plot" in self.inspection_params:
+#                #    range_drag_plot = self.inspection_params["range_drag_plot"]
+#                plt.ylim([0, 0.03])
+#                crrt_subplot += 1
 
                 # plt.tight_layout()
                 plt.tight_layout(pad=0, w_pad=0, h_pad=-0.5)
                 plt.draw()
                 plt.pause(0.5)
+                plt.savefig('post-processing.png')
+                print('solver_step end ', self.solver_step)
 
         if self.solver_step % self.inspection_params["dump"] == 0 and self.inspection_params["dump"] < 10000:
             #Affichage en ligne de commande
@@ -691,7 +709,7 @@ class Env2DCylinder(Environment):
 
         if("single_run" in self.inspection_params and self.inspection_params["single_run"] == True):
             # if ("dump" in self.inspection_params and self.inspection_params["dump"] > 10000):
-                self.sing_run_output()
+            self.sing_run_output()
 
     def sing_run_output(self):
         name = "test_strategy.csv"
@@ -700,12 +718,12 @@ class Env2DCylinder(Environment):
         if(not os.path.exists("saved_models/"+name)):
             with open("saved_models/"+name, "w") as csv_file:
                 spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
-                spam_writer.writerow(["Name", "Step", "Drag", "Lift", "RecircArea"] + ["Jet" + str(v) for v in range(len(self.Qs))])
-                spam_writer.writerow([self.simu_name, self.solver_step, self.history_parameters["drag"].get()[-1], self.history_parameters["lift"].get()[-1], self.history_parameters["recirc_area"].get()[-1]] + [str(v) for v in self.Qs.tolist()])
+                spam_writer.writerow(["Name", "Step", "Drag", "Lift", "RecircArea", "Width", "Angle"])
+                spam_writer.writerow([self.simu_name, self.solver_step, self.history_parameters["drag"].get()[-1], self.history_parameters["lift"].get()[-1], self.history_parameters["recirc_area"].get()[-1], self.history_parameters["slit_width"].get()[-1], self.history_parameters["slit_angle"].get()[-1]])
         else:
             with open("saved_models/"+name, "a") as csv_file:
                 spam_writer=csv.writer(csv_file, delimiter=";", lineterminator="\n")
-                spam_writer.writerow([self.simu_name, self.solver_step, self.history_parameters["drag"].get()[-1], self.history_parameters["lift"].get()[-1], self.history_parameters["recirc_area"].get()[-1]] + [str(v) for v in self.Qs.tolist()])
+                spam_writer.writerow([self.simu_name, self.solver_step, self.history_parameters["drag"].get()[-1], self.history_parameters["lift"].get()[-1], self.history_parameters["recirc_area"].get()[-1], self.history_parameters["slit_width"].get()[-1], self.history_parameters["slit_angle"].get()[-1]])
         return
 
     def output_data(self):
@@ -726,12 +744,15 @@ class Env2DCylinder(Environment):
             modulo_base = self.inspection_params["dump"]
 
             #Sauvegarde du drag dans le csv a la fin de chaque episode
+            #Stores the relevant vars for all episodes
             self.episode_drags = np.append(self.episode_drags, [self.history_parameters["drag"].get()[-1]])
             self.episode_areas = np.append(self.episode_areas, [self.history_parameters["recirc_area"].get()[-1]])
             self.episode_lifts = np.append(self.episode_lifts, [self.history_parameters["lift"].get()[-1]])
 
+            #print('output data', self.last_episode_number, self.episode_number, self.inspection_params["single_run"], 
+            #                     len(self.episode_drags))
             if(self.last_episode_number != self.episode_number and "single_run" in self.inspection_params and self.inspection_params["single_run"] == False):
-                print('output_data 3')
+                print('xxxxxxx ', len(self.episode_drags)//2)
                 self.last_episode_number = self.episode_number
                 avg_drag = np.average(self.episode_drags[len(self.episode_drags)//2:])
                 avg_area = np.average(self.episode_areas[len(self.episode_areas)//2:])
@@ -890,7 +911,7 @@ class Env2DCylinder(Environment):
 
         terminal = False
 
-        if self.verbose > 2:
+        if self.verbose > 2:  
             print(terminal)
 
         reward = self.compute_reward()

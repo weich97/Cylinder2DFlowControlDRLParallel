@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-example_environment = resume_env(plot=False, dump=100, single_run=True)
+example_environment = resume_env(plot=2000, dump=100, single_run=True)
 
 deterministic = True
 
@@ -82,7 +82,7 @@ def plt_angle_width():
     plt.close()
 
 def one_run():
-    for j in range(200):
+    for j in range(2):
         # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
         state = example_environment.reset()
         example_environment.render = True

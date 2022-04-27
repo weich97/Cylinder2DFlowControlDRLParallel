@@ -290,7 +290,7 @@ class RecirculationAreaProbe(object):
         maybe_cells = filter(lambda c: geom_predicate(c.midpoint().array()), cells(mesh))
         maybe_cells, vol_maybe_cells = list(zip(*((c.index(), c.volume()) for c in maybe_cells)))
 
-        # We say that the cell is inside iff some of the dofs it has are masked
+        # We say that the cell is inside if some of the dofs it has are masked
         cell_2_dof = [set(dm.cell_dofs(cell)) for cell in maybe_cells]
 
         # Need to rememeber the geom candidatex and how to filter
@@ -315,6 +315,7 @@ class RecirculationAreaProbe(object):
                     out << (f, float(self.counter))  # Dump
                     self.counter += 1
 
+            print('Recirculation test')
             self.dump = dump
         else:
             self.dump = lambda foo, bar: None

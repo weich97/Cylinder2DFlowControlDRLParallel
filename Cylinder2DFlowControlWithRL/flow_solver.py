@@ -65,6 +65,7 @@ class FlowSolver(object):
         #    for i in range(mesh.num_vertices()):
         #        print('u(%8g,%8g) = %g' % (coor[i][0], coor[i][1], u_array[i]))
         # Starting from rest or are we given the initial state
+        # FIXME: Where does the initial state come from? 
         for path, func, name in zip(('u_init', 'p_init'), (u_n, p_n), ('u0', 'p0')):
             if path in flow_params:
                 comm = mesh.mpi_comm()

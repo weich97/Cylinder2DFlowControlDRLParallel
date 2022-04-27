@@ -41,7 +41,7 @@ def resume_env(plot=False,
                     'front_distance': 0.05 + 0.15,
                     'bottom_distance': 0.05 + 0.15,
                     'width': 0.41,
-                    'cylinder_size': 0.01,
+                    'cylinder_size': 0.1,
                     'coarse_size': 0.1,
                     'coarse_distance': 0.5,
                     'box_size': 0.05,
@@ -72,6 +72,7 @@ def resume_env(plot=False,
 
     solver_params = {'dt': dt}
 
+    # probes outside of the cylinder
     list_position_probes = []
 
     positions_probes_for_grid_x = [0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
@@ -81,6 +82,7 @@ def resume_env(plot=False,
         for crrt_y in positions_probes_for_grid_y:
             list_position_probes.append(np.array([crrt_x, crrt_y]))
 
+    # probes still outside of the cylinder, but closer to the cylinder surface
     positions_probes_for_grid_x = [-0.025, 0.0, 0.025, 0.05]
     positions_probes_for_grid_y = [-0.15, -0.1, 0.1, 0.15]
 
