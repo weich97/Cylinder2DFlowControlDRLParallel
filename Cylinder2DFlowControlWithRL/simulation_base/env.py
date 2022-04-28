@@ -49,7 +49,7 @@ def resume_env(plot=False,
                     'jet_radius': 0.05,
                     'jet_positions': [90+jet_angle, 270-jet_angle],
                     'jet_width': 10,
-                    'slit_angle': 45.0,
+                    'slit_angle': 0.0,
                     'slit_width': 0.1,
                     'clscale': 1.0,
                     'template': './mesh/geometry_2d.geo',
@@ -61,7 +61,7 @@ def resume_env(plot=False,
         #print(bot, top)
         H = top - bot
 
-        Um = 1.5
+        Um = 1,5
 
         return Expression(('-4*Um*(x[1]-bot)*(x[1]-top)/H/H',
                         '0'), bot=bot, top=top, H=H, Um=Um, degree=degree)
@@ -136,7 +136,7 @@ def resume_env(plot=False,
 
     #On fait varier la valeur de n-iter en fonction de si on remesh
     if(remesh):
-        n_iter = int(1.0 / dt)
+        n_iter = int(2.0 / dt)
         # n_iter = int(5.0 / dt)
         # n_iter = int(1.0 / dt)
         #if(os.path.exists('mesh')):
@@ -160,7 +160,7 @@ def resume_env(plot=False,
     if (geometry_params["slit_width"] - 0.1) != 0:
         next_param = 'A' + str(geometry_params["slit_width"] - 0.1)
         simu_name = '_'.join([simu_name, next_param])
-    if geometry_params["cylinder_size"] != 0.01:
+    if geometry_params["cylinder_size"] != 0.1:
         next_param = 'M' + str(geometry_params["cylinder_size"])[2:]
         simu_name = '_'.join([simu_name, next_param])
     #if optimization_params["max_value_jet_MFR"] != 0.01:

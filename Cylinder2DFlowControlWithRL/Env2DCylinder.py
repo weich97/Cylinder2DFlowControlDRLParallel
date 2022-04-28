@@ -555,7 +555,7 @@ class Env2DCylinder(Environment):
 
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plot(self.u_)
-                plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
+                #plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
                 #plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
                 plt.xlim([-self.geometry_params['front_distance'], self.geometry_params['length'] - self.geometry_params['front_distance']])
                 plt.ylim([-self.geometry_params['bottom_distance'], self.geometry_params['width'] - self.geometry_params['bottom_distance']])
@@ -565,7 +565,7 @@ class Env2DCylinder(Environment):
                 print('solver_step1 ', self.solver_step)
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plot(self.p_)
-                plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
+                #plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
                 #plt.scatter(self.list_positions_jets_x, self.list_positions_jets_y, c='r', marker='o')
                 plt.xlim([-self.geometry_params['front_distance'], self.geometry_params['length'] - self.geometry_params['front_distance']])
                 plt.ylim([-self.geometry_params['bottom_distance'], self.geometry_params['width'] - self.geometry_params['bottom_distance']])
@@ -901,8 +901,8 @@ class Env2DCylinder(Environment):
             self.accumulated_drag += self.drag
             self.accumulated_lift += self.lift
 
-        self.paras[0] = 10.0 * self.paras[0]
-        self.paras[1] = 100.0 * self.paras[1]
+        #self.paras[0] = 10.0 * self.paras[0]
+        #self.paras[1] = 100.0 * self.paras[1]
         # TODO: the next_state may incorporte more information: maybe some time information?
         next_state = np.transpose(np.array(self.probes_values))
 

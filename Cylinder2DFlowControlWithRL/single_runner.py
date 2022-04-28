@@ -82,7 +82,7 @@ def plt_angle_width():
     plt.close()
 
 def one_run():
-    for j in range(2):
+    for j in range(1):
         # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
         state = example_environment.reset()
         example_environment.render = True
@@ -135,7 +135,8 @@ def one_run():
             width_file.write(str(width[i]))
             width_file.write('\n')
 
-    plt_angle_width()
+    if j != 0:
+        plt_angle_width()
 
 
 if not deterministic:
