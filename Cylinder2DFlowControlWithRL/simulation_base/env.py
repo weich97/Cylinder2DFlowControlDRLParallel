@@ -61,7 +61,7 @@ def resume_env(plot=False,
         #print(bot, top)
         H = top - bot
 
-        Um = 1,5
+        Um = 1.5
 
         return Expression(('-4*Um*(x[1]-bot)*(x[1]-top)/H/H',
                         '0'), bot=bot, top=top, H=H, Um=Um, degree=degree)
