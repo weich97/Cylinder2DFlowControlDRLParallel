@@ -169,7 +169,7 @@ def resume_env(plot=False,
     if nb_actuations != 80:
         next_param = 'NbAct' + str(nb_actuations)
         simu_name = '_'.join([simu_name, next_param])
-    next_param = 'drag'
+    next_param = 'drag'aae576d4b0dbf96867236f2efc9378d5f92037f4
     if reward_function == 'recirculation_area':
         next_param = 'area'
     if reward_function == 'max_recirculation_area':
