@@ -22,7 +22,7 @@ class FlowSolver(object):
 
         # Update mesh
         #generate_mesh_slit(geometry_params, template=self.geometry_params['template'])
-        subprocess.call(['python3 generate_msh.py -output mesh/geometry_2d.geo -slit_angle %f -slit_width %f' % (geometry_params['slit_angle'], geometry_params['slit_width'])], shell = True)
+        subprocess.call(['python3 generate_msh.py -output mesh/geometry_2d.geo -slit_angle %f -slit_width %f -clscale %f' % (geometry_params['slit_angle'], geometry_params['slit_width'], geometry_params['clscale'])], shell = True)
         convert('mesh/geometry_2d.msh', 'mesh/geometry_2d.h5')
 
         mesh_file = geometry_params['mesh']

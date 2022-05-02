@@ -27,7 +27,7 @@ def resume_env(plot=False,
     # ---------------------------------------------------------------------------------
     # the configuration version number 1
 
-    simulation_duration = 2.0 #duree en secondes de la simulation
+    simulation_duration = 1.0 #duree en secondes de la simulation
     dt=0.0005
 
     root = 'mesh/geometry_2d'
@@ -49,9 +49,9 @@ def resume_env(plot=False,
                     'jet_radius': 0.05,
                     'jet_positions': [90+jet_angle, 270-jet_angle],
                     'jet_width': 10,
-                    'slit_angle': 0.0,
+                    'slit_angle': 45.0,
                     'slit_width': 0.1,
-                    'clscale': 1.0,
+                    'clscale': 0.25,
                     'template': './mesh/geometry_2d.geo',
                     'remesh': remesh}
 
@@ -136,7 +136,7 @@ def resume_env(plot=False,
 
     #On fait varier la valeur de n-iter en fonction de si on remesh
     if(remesh):
-        n_iter = int(2.0 / dt)
+        n_iter = int(1.0 / dt)
         # n_iter = int(5.0 / dt)
         # n_iter = int(1.0 / dt)
         #if(os.path.exists('mesh')):

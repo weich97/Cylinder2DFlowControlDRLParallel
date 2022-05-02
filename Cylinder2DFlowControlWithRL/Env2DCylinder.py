@@ -103,7 +103,7 @@ class Env2DCylinder(Environment):
     """Environment for 2D flow simulation around a cylinder."""
 
     def __init__(self, path_root, geometry_params, flow_params, solver_params, output_params,
-                 optimization_params, inspection_params, n_iter_make_ready=None, verbose=0, size_history=2000,
+                 optimization_params, inspection_params, n_iter_make_ready=None, verbose=0, size_history=1000,
                  reward_function='plain_drag', size_time_state=50, number_steps_execution=1, simu_name="Simu"):
         """
 
@@ -532,7 +532,7 @@ class Env2DCylinder(Environment):
         plt.pause(2.0)
 
     def visual_inspection(self):
-        total_number_subplots = 2 # In the original code, it was 5. Since there are slit width and slit angle, set it to be 6
+        total_number_subplots = 4 # In the original code, it was 5. Since there are slit width and slit angle, set it to be 6
         crrt_subplot = 1
 
         #print('solver_step ', self.initialized_visualization, self.inspection_params["plot"])
@@ -616,56 +616,56 @@ class Env2DCylinder(Environment):
 #                # crrt_subplot += 1
 #
 #                print('solver_step4 ', self.solver_step)
-#                plt.subplot(total_number_subplots, 1, crrt_subplot)
-#                ax1 = plt.gca()
-#                plt.cla()
-#
-#                crrt_drag = self.history_parameters["drag"].get()
-#
-#                ax1.plot(crrt_drag, color='r', linestyle='-')
+                plt.subplot(total_number_subplots, 1, crrt_subplot)
+                ax1 = plt.gca()
+                plt.cla()
+
+                crrt_drag = self.history_parameters["drag"].get()
+
+                ax1.plot(crrt_drag, color='r', linestyle='-')
 #                if 'line_drag' in self.inspection_params:
 #                    ax1.plot([0, self.size_history - 1],
 #                             [self.inspection_params['line_drag'], self.inspection_params['line_drag']],
 #                             color='r',
 #                             linestyle='--')
-#
-#                ax1.set_ylabel("drag")
-#                if "range_drag_plot" in self.inspection_params:
-#                    range_drag_plot = self.inspection_params["range_drag_plot"]
-#                    ax1.set_ylim(range_drag_plot)
-#
-#                ax2 = ax1.twinx()
-#
-#                crrt_lift = self.history_parameters["lift"].get()
-#
-#                ax2.plot(crrt_lift, color='b', linestyle='-', label="lift")
+
+                ax1.set_ylabel("drag")
+                if "range_drag_plot" in self.inspection_params:
+                    range_drag_plot = self.inspection_params["range_drag_plot"]
+                    ax1.set_ylim(range_drag_plot)
+
+                ax2 = ax1.twinx()
+
+                crrt_lift = self.history_parameters["lift"].get()
+
+                ax2.plot(crrt_lift, color='b', linestyle='-', label="lift")
 #                if 'line_lift' in self.inspection_params:
 #                    ax2.plot([0, self.size_history - 1],
 #                             [self.inspection_params['line_lift'], self.inspection_params['line_lift']],
 #                             color='b',
 #                             linestyle='--')
-#
-#                ax2.set_ylabel("lift")
-#                if "range_lift_plot" in self.inspection_params:
-#                    range_lift_plot = self.inspection_params["range_lift_plot"]
-#                    ax2.set_ylim(range_lift_plot)
-#
-#                plt.xlabel("buffer steps")
-#
-#                crrt_subplot += 1
+
+                ax2.set_ylabel("lift")
+                if "range_lift_plot" in self.inspection_params:
+                    range_lift_plot = self.inspection_params["range_lift_plot"]
+                    ax2.set_ylim(range_lift_plot)
+
+                plt.xlabel("buffer steps")
+
+                crrt_subplot += 1
 #
 #
 #                print('solver_step5 ', self.solver_step)
-#                plt.subplot(total_number_subplots, 1, crrt_subplot)
-#                plt.cla()
-#                crrt_area = self.history_parameters["recirc_area"].get()
-#                plt.plot(crrt_area)
-#                plt.ylabel("RecArea")
-#                plt.xlabel("buffer steps")
-#                #if "range_drag_plot" in self.inspection_params:
-#                #    range_drag_plot = self.inspection_params["range_drag_plot"]
-#                plt.ylim([0, 0.03])
-#                crrt_subplot += 1
+                plt.subplot(total_number_subplots, 1, crrt_subplot)
+                plt.cla()
+                crrt_area = self.history_parameters["recirc_area"].get()
+                plt.plot(crrt_area)
+                plt.ylabel("RecArea")
+                plt.xlabel("buffer steps")
+                #if "range_drag_plot" in self.inspection_params:
+                #    range_drag_plot = self.inspection_params["range_drag_plot"]
+                plt.ylim([0, 0.03])
+                crrt_subplot += 1
 
                 # plt.tight_layout()
                 plt.tight_layout(pad=0, w_pad=0, h_pad=-0.5)
@@ -828,13 +828,13 @@ class Env2DCylinder(Environment):
             self.show_drag()
             self.show_control()
 
+        self.episode_number += 1
+
         self.start_class()
 
         next_state = np.transpose(np.array(self.probes_values))
         if self.verbose > 0:
             print(next_state)
-
-        self.episode_number += 1
 
         return(next_state)
 
@@ -901,8 +901,8 @@ class Env2DCylinder(Environment):
             self.accumulated_drag += self.drag
             self.accumulated_lift += self.lift
 
-        #self.paras[0] = 10.0 * self.paras[0]
-        #self.paras[1] = 100.0 * self.paras[1]
+        self.paras[0] = 50.0 * self.paras[0]
+        self.paras[1] = 50.0 * self.paras[1]
         # TODO: the next_state may incorporte more information: maybe some time information?
         next_state = np.transpose(np.array(self.probes_values))
 
