@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-example_environment = resume_env(plot=3000, dump=100, single_run=True)
+example_environment = resume_env(plot=4000, dump=100, single_run=True)
 
 deterministic = True
 
@@ -82,21 +82,23 @@ def plt_angle_width():
     plt.close()
 
 def one_run():
-    for j in range(50):
+    for j in range(20):
         # Can regard taht reset only initialize the flow field to become stable, but no DRL actions
-        state = example_environment.reset()
-        example_environment.render = True
         example_environment.geometry_params['slit_width'] += example_environment.paras[0]
         example_environment.geometry_params['slit_width'] = max(min(example_environment.geometry_params['slit_width'], 0.2), 0.01)
-        example_environment.geometry_params['slit_angle'] += example_environment.paras[1]*180/math.pi
+        example_environment.geometry_params['slit_angle'] += example_environment.paras[1]*180.0/math.pi
         example_environment.geometry_params['slit_angle'] = min(max(example_environment.geometry_params['slit_angle'], 0.0), 180.0)
+        state = example_environment.reset()
+        example_environment.render = True
         sw = example_environment.geometry_params['slit_width']
         sa = example_environment.geometry_params['slit_angle']
         print("start simulation ", j, sw, sa)
     
+        # Can regard this for loop as a way to average
         for k in range(nb_actuations//2):
             #environment.print_state()
             action = agent.act(state, deterministic=deterministic, independent=True)
+            print('action ', j, k, action)
             # After initialization, we need DRL actions
             state, terminal, reward = example_environment.execute(action)
         # just for test, too few timesteps

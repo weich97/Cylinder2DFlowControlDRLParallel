@@ -672,6 +672,7 @@ class Env2DCylinder(Environment):
                 plt.draw()
                 plt.pause(0.5)
                 plt.savefig('post-processing.png')
+                plt.close()
                 print('solver_step end ', self.solver_step)
 
         if self.solver_step % self.inspection_params["dump"] == 0 and self.inspection_params["dump"] < 10000:
@@ -857,23 +858,24 @@ class Env2DCylinder(Environment):
             
         self.previous_action = self.action
         self.action = action
+        self.paras = self.action
 
         # to execute several numerical integration steps
         for crrt_action_nbr in range(self.number_steps_execution):
 
             # try to force a continuous / smoothe(r) control
-            if "smooth_control" in self.optimization_params:
-                # printiv(self.optimization_params["smooth_control"])
-                # printiv(actions)
-                # printiv(self.Qs)
-                # self.Qs += self.optimization_params["smooth_control"] * (np.array(action) - self.Qs)  # the solution originally used in the JFM paper
-                #self.Qs = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
-                self.paras = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
-                #self.paras = 0.0*self.paras
-                #print('paras', self.paras)
-            else:
-                #self.Qs = np.transpose(np.array(action))
-                a = 2 # doing some other work to suppress a warning
+#            if "smooth_control" in self.optimization_params:
+#                # printiv(self.optimization_params["smooth_control"])
+#                # printiv(actions)
+#                # printiv(self.Qs)
+#                # self.Qs += self.optimization_params["smooth_control"] * (np.array(action) - self.Qs)  # the solution originally used in the JFM paper
+#                #self.Qs = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
+#                self.paras = np.array(self.previous_action) + (np.array(self.action) - np.array(self.previous_action)) / self.number_steps_execution * (crrt_action_nbr + 1)  # a linear change in the control
+#                #self.paras = 0.0*self.paras
+#                #print('paras', self.paras)
+#            else:
+#                #self.Qs = np.transpose(np.array(action))
+#                a = 2 # doing some other work to suppress a warning
 
             #Moved this portion to the main program, such as single_runner.py
             #self.geometry_params['slit_width'] = max(min(self.paras[0], 0.2), 0.01)
