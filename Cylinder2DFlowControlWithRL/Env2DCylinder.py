@@ -46,6 +46,7 @@ import shutil
 # environment.actions = {'max_value': 1.0, 'shape': (1,), 'min_value': -1.0, 'type': 'float'}
 
 
+# This function is also in env.py, so not used here
 def constant_profile(mesh, degree):
     '''
     Time independent inflow profile.
@@ -235,6 +236,7 @@ class Env2DCylinder(Environment):
 
             convert(msh_file, h5_file)
             assert os.path.exists(h5_file)
+            print('self.n_iter_make_ready ', self.n_iter_make_ready) # Now it is always 2000
 
         # ------------------------------------------------------------------------
         # if necessary, load initialization fields
@@ -261,7 +263,7 @@ class Env2DCylinder(Environment):
 
             if not "lift" in self.history_parameters:
                 self.history_parameters["lift"] = RingBuffer(self.size_history)
-                #printi("Warning!! No value for the lift founded")
+                #printi("Warning!! No value for# the lift founded")
 
             if not "recirc_area" in self.history_parameters:
                 self.history_parameters["recirc_area"] = RingBuffer(self.size_history)
@@ -319,6 +321,7 @@ class Env2DCylinder(Environment):
         if self.n_iter_make_ready is not None:
             self.u_, self.p_ = self.flow.evolve(self.Qs, self.slit_width, self.slit_angle)
             path=''
+            print('Env2DCylinder.py test dump ', self.verbose)
             if "dump" in self.inspection_params:
                 path = 'results/area_out.pvd'
             self.area_probe = RecirculationAreaProbe(self.u_, 0, store_path=path)
@@ -331,7 +334,9 @@ class Env2DCylinder(Environment):
                 #print('shape, ', np.array(self.u_), np.array(self.p_))
 
                 self.probes_values = self.ann_probes.sample(self.u_, self.p_).flatten()
+                #print("flush0")
                 self.drag = self.drag_probe.sample(self.u_, self.p_)
+                #print("flush1")
                 self.lift = self.lift_probe.sample(self.u_, self.p_)
                 self.recirc_area = self.area_probe.sample(self.u_, self.p_)
                 #print("drag, lift: ", self.drag, self.lift)

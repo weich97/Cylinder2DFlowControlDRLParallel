@@ -28,7 +28,7 @@ def resume_env(plot=False,
     # ---------------------------------------------------------------------------------
     # the configuration version number 1
 
-    simulation_duration = 2.0 #duree en secondes de la simulation
+    simulation_duration = 1.0 #duree en secondes de la simulation
     dt=0.0005
 
     root = 'mesh/geometry_2d'
@@ -130,6 +130,7 @@ def resume_env(plot=False,
     verbose = 0
 
     number_steps_execution = int((simulation_duration/dt)/nb_actuations)
+    print("number of steps execution ", number_steps_execution)
 
     print(f"Number of formal steps per execution: {number_steps_execution}")
 
