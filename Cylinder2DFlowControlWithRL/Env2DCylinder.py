@@ -131,10 +131,10 @@ class Env2DCylinder(Environment):
 
         self.simu_name = simu_name
 
-        self.paras = [0.0, 0.0] #initialization (These are incremental parameters)
+        self.paras = [0.0, 0.0] #initialization
         self.slit_width = self.geometry_params['slit_width']
         self.slit_angle = self.geometry_params['slit_angle']
-        print('slit_angle', self.slit_angle)
+        print(f'Initial slit_params, self.slit_width: {self.slit_width}, self.slit_angle: {self.slit_angle}')
 
 
         #Relatif a l'ecriture des .csv
@@ -162,6 +162,7 @@ class Env2DCylinder(Environment):
         self.start_shadow_class()
 
         print("--- done init ---")
+        print("\n")
         #printi("--- done init ---")
 
     def start_shadow_class(self):
@@ -224,17 +225,16 @@ class Env2DCylinder(Environment):
                 print("Remesh")
                 #printi("generate_mesh start...")
 
-            print('template ', self.geometry_params['template'])
+            print('Env template ', self.geometry_params['template'])
             generate_mesh_slit(self.geometry_params, template=self.geometry_params['template'])
 
             if self.verbose > 0:
                 print("generate_mesh done!")
-            print('msh', msh_file, h5_file)
+            print('Env msh', msh_file, h5_file)
             assert os.path.exists(msh_file)
 
             convert(msh_file, h5_file)
             assert os.path.exists(h5_file)
-            print('self.n_iter_make_ready ', self.n_iter_make_ready) # Now it is always 2000
 
         # ------------------------------------------------------------------------
         # if necessary, load initialization fields
@@ -284,7 +284,7 @@ class Env2DCylinder(Environment):
 
         # ------------------------------------------------------------------------
         # create the flow simulation object; the mesh will be updated
-        self.flow = FlowSolver(self.flow_params, self.path_root, self.geometry_params, self.solver_params)
+        self.flow = FlowSolver(self.flow_params, self.geometry_params, self.solver_params)
 
         # ------------------------------------------------------------------------
         # Setup probes
@@ -334,6 +334,7 @@ class Env2DCylinder(Environment):
                 self.drag = self.drag_probe.sample(self.u_, self.p_)
                 self.lift = self.lift_probe.sample(self.u_, self.p_)
                 self.recirc_area = self.area_probe.sample(self.u_, self.p_)
+                #print("drag, lift: ", self.drag, self.lift)
 
                 self.write_history_parameters()
                 self.visual_inspection()
@@ -546,7 +547,7 @@ class Env2DCylinder(Environment):
 
             if (self.solver_step + 1) % modulo_base == 0:
 
-                print('solver_step0 ', self.solver_step, len(self.u_), modulo_base)
+                #print('Env solver_step0 ', self.solver_step, len(self.u_), modulo_base)
 
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plot(self.u_)
@@ -557,7 +558,7 @@ class Env2DCylinder(Environment):
                 plt.ylabel("V")
                 crrt_subplot += 1
 
-                print('solver_step1 ', self.solver_step)
+                #print('Env solver_step1 ', self.solver_step)
                 plt.subplot(total_number_subplots, 1, crrt_subplot)
                 plot(self.p_)
                 #plt.scatter(self.list_positions_probes_x, self.list_positions_probes_y, c='k', marker='o')
@@ -668,7 +669,7 @@ class Env2DCylinder(Environment):
                 plt.pause(0.5)
                 plt.savefig('post-processing.png')
                 plt.close()
-                print('solver_step end ', self.solver_step)
+                #print('Env solver_step end ', self.solver_step)
 
         if self.solver_step % self.inspection_params["dump"] == 0 and self.inspection_params["dump"] < 10000:
             #Affichage en ligne de commande
@@ -857,6 +858,7 @@ class Env2DCylinder(Environment):
 
         # to execute several numerical integration steps
         for crrt_action_nbr in range(self.number_steps_execution):
+        #for crrt_action_nbr in range(1):
 
             # try to force a continuous / smoothe(r) control
 #            if "smooth_control" in self.optimization_params:
@@ -877,6 +879,7 @@ class Env2DCylinder(Environment):
             #self.geometry_params['slit_angle'] = min(max(self.paras[1], 0.0), 180.0)
 
             # evolve one numerical timestep forward
+            #print("Env number steps execution ", self.drag, self.lift, self.accumulated_drag, self.accumulated_lift)
             self.u_, self.p_ = self.flow.evolve(self.Qs, self.geometry_params['slit_width'], self.geometry_params['slit_angle'])
 
             # displaying information that has to do with the solver itself

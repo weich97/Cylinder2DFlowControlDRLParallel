@@ -4,6 +4,7 @@ import math
 import sys
 # from printind.printind_function import printiv
 sys.path.append("/home/fenics/host/gmsh-3.0.6-Linux64/bin") #FIXME: Now use the absolute path
+# In the container, we need to use sudo install gmsh to install a containered gmsh
 
 
 def generate_mesh(args, template='geometry_2d.template_geo', dim=2):
@@ -79,6 +80,8 @@ def generate_mesh_slit(args, template='mesh/geometry_2d.geo', dim=2):
     #args['slit_angle'] = deg2rad(args['slit_angle'])
 
     scale = args.pop('clscale')
+
+    print("generate_msh new", output)
 
     return subprocess.call(['gmsh -%d -clscale %g %s -v %d' % (dim, scale, output, 0)], shell= True)
 

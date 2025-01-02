@@ -8,7 +8,7 @@ from msh_convert import convert
 
 class FlowSolver(object):
     '''IPCS scheme with explicit treatment of nonlinearity.'''
-    def __init__(self, flow_params, path_root, geometry_params, solver_params):
+    def __init__(self, flow_params, geometry_params, solver_params):
         # Using very simple IPCS solver
         self.mu = Constant(flow_params['mu'])              # dynamic viscosity
         self.rho = Constant(flow_params['rho'])            # density
@@ -18,10 +18,11 @@ class FlowSolver(object):
         self.flow_params = flow_params
         self.geometry_params = geometry_params
         self.solver_params = solver_params
-        self.root = path_root
 
         # Update mesh
         #generate_mesh_slit(geometry_params, template=self.geometry_params['template'])
+        #subprocess.call(['python3 generate_msh.py -output mesh/geometry_2d.geo -slit_angle %f -slit_width %f -clscale %f' % (geometry_params['slit_angle'], geometry_params['slit_width'], geometry_params['clscale'])], shell = True)
+        print('flow solver clscale ', geometry_params['clscale'])
         subprocess.call(['python3 generate_msh.py -output mesh/geometry_2d.geo -slit_angle %f -slit_width %f -clscale %f' % (geometry_params['slit_angle'], geometry_params['slit_width'], geometry_params['clscale'])], shell = True)
         convert('mesh/geometry_2d.msh', 'mesh/geometry_2d.h5')
 
@@ -50,7 +51,7 @@ class FlowSolver(object):
         # Tags 5 and higher are jets
 
         # Define function spaces
-        V = VectorFunctionSpace(mesh, 'CG', 1)
+        V = VectorFunctionSpace(mesh, 'CG', 2)
         Q = FunctionSpace(mesh, 'CG', 1)
 
         # Define trial and test functions
@@ -67,6 +68,7 @@ class FlowSolver(object):
         # Starting from rest or are we given the initial state
         # FIXME: Where does the initial state come from? 
         for path, func, name in zip(('u_init', 'p_init'), (u_n, p_n), ('u0', 'p0')):
+            # The following condition is False
             if path in flow_params:
                 comm = mesh.mpi_comm()
 
@@ -216,7 +218,6 @@ class FlowSolver(object):
         self.flow_params = flow_params
         self.geometry_params = geometry_params
         self.solver_params = solver_params
-        #self.root = path_root
 
         mesh_file = geometry_params['mesh']
 
@@ -244,13 +245,14 @@ class FlowSolver(object):
         # Tags 5 and higher are jets
 
         # Define function spaces
-        V = VectorFunctionSpace(mesh, 'CG', 1)
+        V = VectorFunctionSpace(mesh, 'CG', 2)
         Q = FunctionSpace(mesh, 'CG', 1)
 
         # Define trial and test functions
         u, v = TrialFunction(V), TestFunction(V)
         p, q = TrialFunction(Q), TestFunction(Q)
 
+        # FIXME: recheck the following stuff
         u_n, p_n = Function(V), Function(Q)
         u_nodal_values = u_n.vector()
         u_array = np.array(u_nodal_values)
@@ -396,7 +398,7 @@ class FlowSolver(object):
         self.viscosity = mu
         self.density = rho
         self.normal = n
-        self.cylinder_surface_tags = [cylinder_noslip_tag] + jet_tags
+        self.cylinder_surface_tags = [cylinder_noslip_tag]
 
 
     def evolve(self, jet_bc_values, slit_width, slit_angle):
@@ -468,7 +470,8 @@ if __name__ == '__main__':
                        'jet_positions': [0, 270],
                        'slit_width': 0.1,
                        'slit_angle': 10,
-                       'mesh': './geometry_2d.h5'}
+                       'mesh': './mesh/geometry_2d.h5',
+                       'clscale': 0.25}
 
     flow_params = {'mu': 1E-3,
                    'rho': 1,
