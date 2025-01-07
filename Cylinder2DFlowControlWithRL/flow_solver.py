@@ -8,7 +8,7 @@ from msh_convert import convert
 
 class FlowSolver(object):
     '''IPCS scheme with explicit treatment of nonlinearity.'''
-    def __init__(self, flow_params, path_root, geometry_params, solver_params):
+    def __init__(self, flow_params, geometry_params, solver_params):
         # Using very simple IPCS solver
         self.mu = Constant(flow_params['mu'])              # dynamic viscosity
         self.rho = Constant(flow_params['rho'])            # density
